@@ -32,7 +32,7 @@ const getColor = (status) => {
   return '#1D9E75';
 };
 
-function Map() {
+function MapPage() {
   const [filter, setFilter] = useState('all');
 
   const filtered = vessels.filter(v => filter === 'all' || v.status === filter);
@@ -113,4 +113,4 @@ const styles = {
   map: { height: '520px', borderRadius: '12px', border: '1px solid #1e3a5f' },
 };
 
-export default Map;
+export default MapPage;
