@@ -1,22 +1,45 @@
 import React, { useState, useEffect } from 'react';
+import { database } from '../firebase';
+import { ref, onValue } from 'firebase/database';
 
 function Dashboard() {
   const [stats, setStats] = useState({
-    vesselsTracked: 0,
-    alertsToday: 0,
+    vesselsTracked: 47,
+    alertsToday: 3,
     zonesMonitored: 5,
     accuracy: 94,
   });
 
+  const [recentAlerts, setRecentAlerts] = useState([
+    { id: 'VS-2041', type: 'Zone Intrusion', location: 'Gulf of Mannar', time: '2 mins ago', level: 'HIGH' },
+    { id: 'VS-1823', type: 'Transponder Dark', location: 'Lakshadweep Sea', time: '18 mins ago', level: 'HIGH' },
+    { id: 'VS-3012', type: 'Abnormal Speed', location: 'Arabian Sea', time: '45 mins ago', level: 'MEDIUM' },
+  ]);
+
   useEffect(() => {
-    setTimeout(() => {
-      setStats({
-        vesselsTracked: 47,
-        alertsToday: 3,
-        zonesMonitored: 5,
-        accuracy: 94,
-      });
-    }, 1000);
+    const alertsRef = ref(database, 'alerts');
+    onValue(alertsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const alertList = Object.values(data).slice(-3).reverse();
+        setRecentAlerts(alertList);
+        setStats(prev => ({
+          ...prev,
+          alertsToday: Object.values(data).length,
+        }));
+      }
+    });
+
+    const vesselsRef = ref(database, 'vessels');
+    onValue(vesselsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setStats(prev => ({
+          ...prev,
+          vesselsTracked: Object.values(data).length,
+        }));
+      }
+    });
   }, []);
 
   const cards = [
@@ -24,12 +47,6 @@ function Dashboard() {
     { label: 'Alerts Fired', value: stats.alertsToday, unit: 'today', color: '#ef4444' },
     { label: 'Zones Monitored', value: stats.zonesMonitored, unit: 'active', color: '#1D9E75' },
     { label: 'Model Accuracy', value: stats.accuracy, unit: '%', color: '#EF9F27' },
-  ];
-
-  const recentAlerts = [
-    { id: 'VS-2041', type: 'Zone Intrusion', location: 'Gulf of Mannar', time: '2 mins ago', level: 'HIGH' },
-    { id: 'VS-1823', type: 'Transponder Dark', location: 'Lakshadweep Sea', time: '18 mins ago', level: 'HIGH' },
-    { id: 'VS-3012', type: 'Abnormal Speed', location: 'Arabian Sea', time: '45 mins ago', level: 'MEDIUM' },
   ];
 
   return (
@@ -52,8 +69,8 @@ function Dashboard() {
       <div style={styles.section}>
         <h3 style={styles.sectionTitle}>Recent Alerts</h3>
         <div style={styles.alertList}>
-          {recentAlerts.map((alert) => (
-            <div key={alert.id} style={styles.alertRow}>
+          {recentAlerts.map((alert, index) => (
+            <div key={index} style={styles.alertRow}>
               <div style={styles.alertLeft}>
                 <span style={{
                   ...styles.levelBadge,
